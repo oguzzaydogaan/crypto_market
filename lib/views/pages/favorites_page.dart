@@ -28,25 +28,7 @@ class _FavoritesPageState extends State<FavoritesPage> {
                       Text('Bitcoin (BTC)'),
                     ],
                   ),
-                  Row(
-                    children: [
-                      Text('\$97,256'),
-                      SizedBox(width: 8),
-                      IconButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) {
-                                return CoinPage();
-                              },
-                            ),
-                          );
-                        },
-                        icon: Icon(Icons.arrow_forward_ios),
-                      ),
-                    ],
-                  ),
+                  Row(children: [Text('\$97,256'), SizedBox(width: 8)]),
                 ],
               ),
             ),
