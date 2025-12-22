@@ -1,3 +1,4 @@
+import 'package:crypto_market/components/search_field.dart';
 import 'package:crypto_market/models/coin_model.dart';
 import 'package:crypto_market/views/pages/coin_page.dart';
 import 'package:flutter/material.dart';
@@ -15,8 +16,12 @@ class _HomePageState extends State<HomePage> {
   final CoinService _coinService = CoinService();
   final SignalRService _signalRService = SignalRService();
 
-  List<CoinModel> myCoins = [];
+  List<CoinModel> _allCoins = [];
+  List<CoinModel> _filteredCoins = [];
+
   Map<String, dynamic> liveData = {};
+  Set<int> _favoriteCoinIds = {};
+
   bool isLoading = true;
 
   @override
@@ -26,56 +31,127 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _initializeApp() async {
-    var coins = await _coinService.getAllCoins();
+    try {
+      final results = await Future.wait([
+        _coinService.getAllCoins(),
+        _coinService.getFavoriteCoins(),
+      ]);
 
-    if (mounted) {
-      setState(() {
-        myCoins = coins;
-        isLoading = false;
-      });
-    }
-
-    if (myCoins.isEmpty) return;
-
-    _signalRService.onTickerReceived = (data) {
-      String incomingSymbol = data["s"];
+      var allCoins = results[0];
+      var favCoins = results[1];
 
       if (mounted) {
         setState(() {
-          liveData[incomingSymbol] = data;
+          _allCoins = allCoins;
+          _filteredCoins = allCoins;
+
+          _favoriteCoinIds = favCoins.map((e) => e.id).toSet();
+          isLoading = false;
         });
       }
-    };
 
-    await _signalRService.connect();
+      if (_allCoins.isEmpty) return;
+
+      _signalRService.onTickerReceived = (data) {
+        String incomingSymbol = data["s"];
+        if (mounted) {
+          setState(() {
+            liveData[incomingSymbol] = data;
+          });
+        }
+      };
+
+      await _signalRService.connect();
+    } catch (e) {
+      print("Hata: $e");
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _runFilter(String keyword) {
+    List<CoinModel> results = [];
+    if (keyword.isEmpty) {
+      results = _allCoins;
+    } else {
+      results = _allCoins
+          .where(
+            (coin) =>
+                coin.name.toLowerCase().contains(keyword.toLowerCase()) ||
+                coin.symbol.toLowerCase().contains(keyword.toLowerCase()),
+          )
+          .toList();
+    }
+
+    setState(() {
+      _filteredCoins = results;
+    });
+  }
+
+  Future<void> _toggleFavorite(int coinId) async {
+    bool isFav = _favoriteCoinIds.contains(coinId);
+
+    setState(() {
+      if (isFav) {
+        _favoriteCoinIds.remove(coinId);
+      } else {
+        _favoriteCoinIds.add(coinId);
+      }
+    });
+
+    bool success = await _coinService.toggleFavoriteCoin(coinId);
+
+    if (!success && mounted) {
+      setState(() {
+        if (isFav)
+          _favoriteCoinIds.add(coinId);
+        else
+          _favoriteCoinIds.remove(coinId);
+      });
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("İşlem başarısız oldu")));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
       return const Center(child: CircularProgressIndicator());
-    } else if (myCoins.isEmpty) {
+    } else if (_allCoins.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Icon(Icons.cloud_off, size: 64, color: Colors.grey),
             const SizedBox(height: 10),
-            const Text("No followed coins found."),
+            const Text("No coins found."),
             TextButton(onPressed: _initializeApp, child: const Text("Refresh")),
           ],
         ),
       );
     } else {
-      return ListView.builder(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        itemCount: myCoins.length,
-        itemBuilder: (context, index) {
-          CoinModel coin = myCoins[index];
-          var data = liveData[coin.symbol];
+      return Column(
+        children: [
+          CoinSearchField(onChanged: _runFilter),
+          Expanded(
+            child: _filteredCoins.isEmpty
+                ? const Center(child: Text("Sonuç bulunamadı"))
+                : ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    itemCount: _filteredCoins.length,
+                    itemBuilder: (context, index) {
+                      CoinModel coin = _filteredCoins[index];
+                      var data = liveData[coin.symbol];
 
-          return _buildCoinCard(coin, data);
-        },
+                      return _buildCoinCard(coin, data);
+                    },
+                  ),
+          ),
+        ],
       );
     }
   }
@@ -107,6 +183,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     String shortSymbol = coin.symbol.replaceAll("USDT", "");
+    bool isFavorite = _favoriteCoinIds.contains(coin.id);
 
     return GestureDetector(
       onTap: () {
@@ -190,6 +267,18 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ],
+              ),
+
+              const SizedBox(width: 8),
+              IconButton(
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                icon: Icon(
+                  isFavorite ? Icons.star : Icons.star_border,
+                  color: isFavorite ? Colors.orange : Colors.grey.shade400,
+                  size: 28,
+                ),
+                onPressed: () => _toggleFavorite(coin.id),
               ),
             ],
           ),

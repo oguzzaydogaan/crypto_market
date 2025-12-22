@@ -7,6 +7,7 @@ class SignalRService {
   late HubConnection _hubConnection;
   Function(dynamic)? onTickerReceived;
   Function(dynamic)? onKlineReceived;
+  Function(dynamic)? onTradeReceived;
 
   Future<void> connect() async {
     try {
@@ -24,11 +25,14 @@ class SignalRService {
       });
       _hubConnection.on("ReceiveKline", (arguments) {
         if (arguments != null && arguments.isNotEmpty) {
-          print("Received Kline: ${arguments[0]}");
           if (onKlineReceived != null) {
             onKlineReceived!(arguments[0]);
           }
         }
+      });
+      _hubConnection.on("ReceiveTrade", (arguments) {
+        print("Trade: ${arguments![0]}");
+        onTradeReceived?.call(arguments![0]);
       });
 
       await _hubConnection.start();

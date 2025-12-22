@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:crypto_market/models/trade_model.dart';
 import 'package:http/http.dart' as http;
 import '../models/coin_model.dart';
 import 'package:candlesticks/candlesticks.dart';
@@ -20,6 +21,41 @@ class CoinService {
     } catch (e) {
       print("API Hatası: $e");
       return [];
+    }
+  }
+
+  Future<List<CoinModel>> getFavoriteCoins() async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/coins/favorites'));
+
+      if (response.statusCode == 200) {
+        List<dynamic> body = jsonDecode(response.body);
+        return body.map((item) => CoinModel.fromJson(item)).toList();
+      } else {
+        print("Sunucu Hatası: ${response.statusCode}");
+        return [];
+      }
+    } catch (e) {
+      print("API Hatası: $e");
+      return [];
+    }
+  }
+
+  Future<bool> toggleFavoriteCoin(int coinId) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$_baseUrl/coins/toggleFavorite/$coinId'),
+      );
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print("Sunucu Hatası: ${response.statusCode}");
+        return false;
+      }
+    } catch (e) {
+      print("API Hatası: $e");
+      return false;
     }
   }
 
@@ -53,6 +89,25 @@ class CoinService {
       }
     } catch (e) {
       print("Kline API Hatası: $e");
+      return [];
+    }
+  }
+
+  Future<List<TradeModel>> getRecentTrades(String symbol) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/coins/trades/$symbol'),
+      );
+
+      if (response.statusCode == 200) {
+        List<dynamic> body = jsonDecode(response.body);
+        return body.map((item) => TradeModel.fromJson(item)).toList();
+      } else {
+        print("Trades Hatası: ${response.statusCode}");
+        return [];
+      }
+    } catch (e) {
+      print("API Hatası: $e");
       return [];
     }
   }
