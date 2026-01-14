@@ -13,7 +13,9 @@ class CoinSearchField extends StatelessWidget {
         onChanged: onChanged,
         decoration: InputDecoration(
           hintText: 'Search coin (Bitcoin, Ethereum...)',
-          prefixIcon: const Icon(Icons.search),
+          fillColor: Colors.teal.withOpacity(0.1),
+          hintStyle: TextStyle(color: Colors.teal),
+          prefixIcon: const Icon(Icons.search, color: Colors.teal),
           filled: true,
           contentPadding: const EdgeInsets.symmetric(
             vertical: 0,
