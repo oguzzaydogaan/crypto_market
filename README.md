@@ -2,8 +2,6 @@
 
 **CryptoMarket**, kripto para piyasasını anlık olarak takip etmenizi, favori varlıklarınızı yönetmenizi ve piyasa hareketlerini detaylı grafikler üzerinden incelemenizi sağlayan modern bir mobil uygulamadır.
 
-Bu proje, **Ankara Üniversitesi Mühendislik Fakültesi - BLM4537 iOS ile Mobil Uygulama Geliştirme** dersi kapsamında geliştirilmiştir.
-
 ---
 
 ## 📱 Özellikler
@@ -33,14 +31,6 @@ Bu proje, **Ankara Üniversitesi Mühendislik Fakültesi - BLM4537 iOS ile Mobil
 - **Framework:** .NET Core Web API
 - **Real-time Communication:** SignalR
 - **Data Source:** Binance Public API (WebSocket Stream)
-
-## 📸 Ekran Görüntüleri
-
-|                    Ana Sayfa (Liste)                     |                     Ana Sayfa (Grid)                     |                       Detay Sayfası                        |
-| :------------------------------------------------------: | :------------------------------------------------------: | :--------------------------------------------------------: |
-| <img src="assets/screenshots/list_view.png" width="250"> | <img src="assets/screenshots/grid_view.png" width="250"> | <img src="assets/screenshots/detail_view.png" width="250"> |
-
-_(Not: Ekran görüntülerini projenizin `assets` klasörüne ekleyip yolları güncelleyebilirsiniz)_
 
 ## 🚀 Kurulum ve Çalıştırma
 
@@ -76,10 +66,6 @@ Projeyi yerel ortamınızda çalıştırmak için aşağıdaki adımları izleyi
     ```bash
     flutter run
     ```
-
-## 📂 Proje Yapısı
-
-    lib/ ├── components/ # Yeniden kullanılabilir widget'lar (CoinCard, SearchField vb.) ├── models/ # Veri modelleri (CoinModel, TradeModel) ├── services/ # API ve SignalR servisleri ├── views/ # Sayfalar (HomePage, CoinPage, FavoritesPage) └── main.dart # Uygulama giriş noktası
 
 ## 👤 Geliştirici
 
