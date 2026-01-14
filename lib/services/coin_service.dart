@@ -24,6 +24,46 @@ class CoinService {
     }
   }
 
+  Future<bool> addCoin(String name, String symbol) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/coins'), // Backend endpointinize göre düzenleyin
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "name": name,
+          "symbol": symbol
+              .toUpperCase(), // Sembolleri genelde büyük harf göndeririz
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return true;
+      } else {
+        print("Ekleme Hatası: ${response.statusCode}");
+        return false;
+      }
+    } catch (e) {
+      print("API Hatası: $e");
+      return false;
+    }
+  }
+
+  Future<bool> deleteCoin(int id) async {
+    try {
+      final response = await http.delete(Uri.parse('$_baseUrl/coins/$id'));
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print("Silme Hatası: ${response.statusCode}");
+        return false;
+      }
+    } catch (e) {
+      print("API Hatası: $e");
+      return false;
+    }
+  }
+
   Future<List<CoinModel>> getFavoriteCoins() async {
     try {
       final response = await http.get(Uri.parse('$_baseUrl/coins/favorites'));

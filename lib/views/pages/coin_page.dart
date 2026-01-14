@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:crypto_market/views/widget_tree.dart';
 import 'package:flutter/material.dart';
 import 'package:candlesticks/candlesticks.dart';
 import 'package:intl/intl.dart';
@@ -34,14 +35,10 @@ class _CoinPageState extends State<CoinPage> {
   }
 
   Future<void> _initializeData() async {
-    // 1. Favori Kontrolü
     var favCoins = await _coinService.getFavoriteCoins();
     bool favStatus = favCoins.any((element) => element.id == widget.coin.id);
 
-    // 2. Grafik Verisi
     var history = await _coinService.getKlinesBySymbol(widget.coin.symbol);
-
-    // 3. Trade Verisi
     _fetchTrades();
 
     if (mounted) {
@@ -104,7 +101,6 @@ class _CoinPageState extends State<CoinPage> {
         int.parse(data["t"].toString()),
       );
       double socketClose = double.parse(data["c"].toString());
-      // ... Diğer parse işlemleri (h,l,o,v) ...
       double socketHigh = double.parse(data["h"].toString());
       double socketLow = double.parse(data["l"].toString());
       double socketOpen = double.parse(data["o"].toString());
@@ -179,6 +175,52 @@ class _CoinPageState extends State<CoinPage> {
     }
   }
 
+  // --- YENİ EKLENEN SİLME FONKSİYONU ---
+  void _confirmDelete() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Delete Coin"),
+        content: Text("Are you sure to delete ${widget.coin.name}?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              Navigator.pop(context);
+
+              bool success = await _coinService.deleteCoin(widget.coin.id);
+
+              if (mounted) {
+                if (success) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const WidgetTree()),
+                    (route) => false,
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Coin deleted successfully!")),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Failed to delete coin!")),
+                  );
+                }
+              }
+            },
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _signalRService.leaveGroup(widget.coin.symbol);
@@ -216,6 +258,12 @@ class _CoinPageState extends State<CoinPage> {
               color: isFavorite ? Colors.orange : Colors.grey,
             ),
           ),
+          // --- YENİ EKLENEN SİLME BUTONU ---
+          IconButton(
+            onPressed: _confirmDelete,
+            tooltip: "Coini Sil",
+            icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+          ),
         ],
       ),
       body: isLoading
@@ -226,7 +274,6 @@ class _CoinPageState extends State<CoinPage> {
                   flex: 5,
                   child: Column(
                     children: [
-                      // Grafik
                       Expanded(
                         child: candles.isNotEmpty
                             ? Candlesticks(candles: candles)
@@ -302,12 +349,10 @@ class _CoinPageState extends State<CoinPage> {
   }
 
   Widget _buildRecentTradesList() {
-    if (isTradesLoading) {
+    if (isTradesLoading)
       return const Center(child: CircularProgressIndicator());
-    }
-    if (recentTrades.isEmpty) {
+    if (recentTrades.isEmpty)
       return const Center(child: Text("No recent trades available."));
-    }
 
     return ListView.builder(
       padding: EdgeInsets.zero,
@@ -315,7 +360,6 @@ class _CoinPageState extends State<CoinPage> {
       itemBuilder: (context, index) {
         final trade = recentTrades[index];
         final bool isSell = trade.isBuyerMaker;
-
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 1),
           child: Row(
